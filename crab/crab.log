@@ -1,0 +1,112 @@
+DEBUG 2022-02-16 10:31:46.745 UTC: 	 CRAB Client version: v3.211130
+DEBUG 2022-02-16 10:31:46.746 UTC: 	 Running on: Linux tamsa2 3.10.0-1160.15.2.el7.x86_64 #1 SMP Wed Feb 3 15:06:38 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux - CentOS Linux 7 (Core)
+DEBUG 2022-02-16 10:31:46.746 UTC: 	 Executing command: 'submit'
+DEBUG 2022-02-16 10:31:46.746 UTC: 	 Found CRAB cache file /home/youngwan/.crab3
+INFO 2022-02-16 10:31:46.751 UTC: 	 Will use CRAB configuration file tnpCrabSubmit.py
+DEBUG 2022-02-16 10:31:46.751 UTC: 	 Loading CRAB configuration file.
+ERROR 2022-02-16 10:33:40.408 UTC: 	 Keyboard Interrupted
+INFO 2022-02-16 10:33:40.410 UTC: 	 Log file is /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab.log
+DEBUG 2022-02-16 10:35:14.316 UTC: 	 CRAB Client version: v3.211130
+DEBUG 2022-02-16 10:35:14.317 UTC: 	 Running on: Linux tamsa2 3.10.0-1160.15.2.el7.x86_64 #1 SMP Wed Feb 3 15:06:38 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux - CentOS Linux 7 (Core)
+DEBUG 2022-02-16 10:35:14.317 UTC: 	 Executing command: 'submit'
+DEBUG 2022-02-16 10:35:14.317 UTC: 	 Found CRAB cache file /home/youngwan/.crab3
+INFO 2022-02-16 10:35:14.318 UTC: 	 Will use CRAB configuration file tnpCrabSubmit.py
+DEBUG 2022-02-16 10:35:14.319 UTC: 	 Loading CRAB configuration file.
+ERROR 2022-02-16 10:37:11.483 UTC: 	 Keyboard Interrupted
+INFO 2022-02-16 10:37:11.485 UTC: 	 Log file is /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab.log
+DEBUG 2022-02-16 10:37:39.024 UTC: 	 CRAB Client version: v3.211130
+DEBUG 2022-02-16 10:37:39.025 UTC: 	 Running on: Linux tamsa2 3.10.0-1160.15.2.el7.x86_64 #1 SMP Wed Feb 3 15:06:38 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux - CentOS Linux 7 (Core)
+DEBUG 2022-02-16 10:37:39.025 UTC: 	 Executing command: 'kill'
+DEBUG 2022-02-16 10:37:39.025 UTC: 	 Found CRAB cache file /home/youngwan/.crab3
+ERROR 2022-02-16 10:37:39.026 UTC: 	 Cannot find .requestcache file in CRAB project directory /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab_ElectronTnP_HNTypeI_UL
+ERROR 2022-02-16 10:37:39.027 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/bin/crab.py", line 149, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/bin/crab.py", line 134, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/lib/CRABClient/Commands/SubCommand.py", line 269, in __init__
+    SubCommand.validateOptions(self)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/lib/CRABClient/Commands/SubCommand.py", line 640, in validateOptions
+    self.loadLocalCache()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/lib/CRABClient/Commands/SubCommand.py", line 502, in loadLocalCache
+    raise ex
+CachefileNotFoundException: Cannot find .requestcache file in CRAB project directory /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab_ElectronTnP_HNTypeI_UL
+INFO 2022-02-16 10:37:39.029 UTC: 	 Log file is /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab.log
+DEBUG 2022-02-16 10:38:53.883 UTC: 	 CRAB Client version: v3.211130
+DEBUG 2022-02-16 10:38:53.884 UTC: 	 Running on: Linux tamsa2 3.10.0-1160.15.2.el7.x86_64 #1 SMP Wed Feb 3 15:06:38 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux - CentOS Linux 7 (Core)
+DEBUG 2022-02-16 10:38:53.884 UTC: 	 Executing command: 'kill'
+DEBUG 2022-02-16 10:38:53.884 UTC: 	 Found CRAB cache file /home/youngwan/.crab3
+ERROR 2022-02-16 10:38:53.886 UTC: 	 Cannot find .requestcache file in CRAB project directory /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab_ElectronTnP_HNTypeI_UL/crab_UL2016preVFP_Run2016E
+ERROR 2022-02-16 10:38:53.886 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/bin/crab.py", line 149, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/bin/crab.py", line 134, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/lib/CRABClient/Commands/SubCommand.py", line 269, in __init__
+    SubCommand.validateOptions(self)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/lib/CRABClient/Commands/SubCommand.py", line 640, in validateOptions
+    self.loadLocalCache()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.211130.01/lib/CRABClient/Commands/SubCommand.py", line 502, in loadLocalCache
+    raise ex
+CachefileNotFoundException: Cannot find .requestcache file in CRAB project directory /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab_ElectronTnP_HNTypeI_UL/crab_UL2016preVFP_Run2016E
+INFO 2022-02-16 10:38:53.889 UTC: 	 Log file is /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab.log
+DEBUG 2022-02-17 00:42:21.254 UTC: 	 CRAB Client version: v3.220210
+DEBUG 2022-02-17 00:42:21.254 UTC: 	 Running on: Linux tamsa2 3.10.0-1160.15.2.el7.x86_64 #1 SMP Wed Feb 3 15:06:38 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux - CentOS Linux 7 (Core)
+DEBUG 2022-02-17 00:42:21.255 UTC: 	 Executing command: 'status'
+DEBUG 2022-02-17 00:42:21.255 UTC: 	 Found CRAB cache file /home/youngwan/.crab3
+ERROR 2022-02-17 00:42:21.257 UTC: 	 Cannot find .requestcache file in CRAB project directory /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab_ElectronTnP_HNTypeI_UL/crab_20220216_210517
+ERROR 2022-02-17 00:42:21.257 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.220210.00/bin/crab.py", line 162, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.220210.00/bin/crab.py", line 147, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.220210.00/lib/CRABClient/Commands/status.py", line 48, in __init__
+    SubCommand.__init__(self, logger, cmdargs)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.220210.00/lib/CRABClient/Commands/SubCommand.py", line 275, in __init__
+    SubCommand.validateOptions(self)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.220210.00/lib/CRABClient/Commands/SubCommand.py", line 646, in validateOptions
+    self.loadLocalCache()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.220210.00/lib/CRABClient/Commands/SubCommand.py", line 508, in loadLocalCache
+    raise ex
+CachefileNotFoundException: Cannot find .requestcache file in CRAB project directory /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab_ElectronTnP_HNTypeI_UL/crab_20220216_210517
+INFO 2022-02-17 00:42:21.287 UTC: 	 Log file is /data9/Users/youngwan/work/HNTypeI_TnP/CMSSW_10_6_13/src/EgammaAnalysis/TnPTreeProducer/crab/crab.log
+DEBUG 2022-02-17 04:12:51.774 UTC: 	 CRAB Client version: v3.220210
+DEBUG 2022-02-17 04:12:51.774 UTC: 	 Running on: Linux tamsa2 3.10.0-1160.15.2.el7.x86_64 #1 SMP Wed Feb 3 15:06:38 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux - CentOS Linux 7 (Core)
+DEBUG 2022-02-17 04:12:51.774 UTC: 	 Executing command: 'checkwrite'
+DEBUG 2022-02-17 04:12:51.775 UTC: 	 Found CRAB cache file /home/youngwan/.crab3
+DEBUG 2022-02-17 04:13:04.313 UTC: 	 CRAB Client version: v3.220210
+DEBUG 2022-02-17 04:13:04.313 UTC: 	 Running on: Linux tamsa2 3.10.0-1160.15.2.el7.x86_64 #1 SMP Wed Feb 3 15:06:38 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux - CentOS Linux 7 (Core)
+DEBUG 2022-02-17 04:13:04.314 UTC: 	 Executing command: 'checkwrite'
+DEBUG 2022-02-17 04:13:04.314 UTC: 	 Found CRAB cache file /home/youngwan/.crab3
+DEBUG 2022-02-17 04:13:04.315 UTC: 	 Checking credentials
+DEBUG 2022-02-17 04:13:04.315 UTC: 	 Found proxy file /tmp/x509up_u5587
+DEBUG 2022-02-17 04:13:04.315 UTC: 	 Making sure it has proper VOMS extension
+DEBUG 2022-02-17 04:13:04.315 UTC: 	 Executing command :
+ voms-proxy-info --vo --file /tmp/x509up_u5587
+DEBUG 2022-02-17 04:13:04.428 UTC: 	 output : cms
+
+ error: 
+ retcode : 0
+DEBUG 2022-02-17 04:13:04.428 UTC: 	 Getting proxy life time left
+DEBUG 2022-02-17 04:13:04.429 UTC: 	 Executing command :
+ voms-proxy-info --actimeleft --timeleft --file /tmp/x509up_u5587
+DEBUG 2022-02-17 04:13:04.510 UTC: 	 output : 592251
+592251
+
+ error: 
+ retcode : 0
+DEBUG 2022-02-17 04:13:04.511 UTC: 	 Proxy valid for 164:30:51 hours
+DEBUG 2022-02-17 04:13:04.511 UTC: 	 Command use: checkwrite
+DEBUG 2022-02-17 04:13:04.511 UTC: 	 Options use: ['--site=T3_KR_KISTI']
+DEBUG 2022-02-17 04:13:04.512 UTC: 	 Instance is None
+DEBUG 2022-02-17 04:13:04.512 UTC: 	 Server base url is None
+DEBUG 2022-02-17 04:13:04.512 UTC: 	 Retrieving username ...
+DEBUG 2022-02-17 04:13:04.512 UTC: 	 Retrieving username from CRIC...
+DEBUG 2022-02-17 04:13:08.488 UTC: 	 username is youngwan
+INFO 2022-02-17 04:13:08.489 UTC: 	 Will check write permission in the default location /store/user/<username>
+INFO 2022-02-17 04:13:08.489 UTC: 	 Validating LFN /store/user/youngwan...
+INFO 2022-02-17 04:13:08.489 UTC: 	 LFN /store/user/youngwan is valid.
+INFO 2022-02-17 04:13:08.547 UTC: 	 Neither gfal nor lcg command was found

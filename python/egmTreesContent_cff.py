@@ -4,6 +4,8 @@ import FWCore.ParameterSet.Config as cms
 ## TREE CONTENT
 #########################################################################
     
+from EgammaAnalysis.TnPTreeProducer.cmssw_version import isReleaseAbove
+
 ZVariablesToStore = cms.PSet(
     eta = cms.string("eta"),
     abseta = cms.string("abs(eta)"),
@@ -83,18 +85,23 @@ EleProbeVariablesToStore = cms.PSet(
 
      
     #isolation
-    el_chIso         = cms.string("pfIsolationVariables().sumChargedHadronPt"),
-    el_phoIso        = cms.string("pfIsolationVariables().sumPhotonEt"),
-    el_neuIso        = cms.string("pfIsolationVariables().sumNeutralHadronEt"),
-    el_ecalIso       = cms.string("ecalPFClusterIso"),
-    el_dr03EcalRecHitSumEt       = cms.string("dr03EcalRecHitSumEt"),
-    el_hcalIso       = cms.string("hcalPFClusterIso"),
-    el_trkIso        = cms.string("trackIso"),
-    el_dr03TkSumPt   = cms.string("dr03TkSumPt"),
+    el_chIso               = cms.string("pfIsolationVariables().sumChargedHadronPt"),
+    el_phoIso              = cms.string("pfIsolationVariables().sumPhotonEt"),
+    el_neuIso              = cms.string("pfIsolationVariables().sumNeutralHadronEt"),
+    el_dr03EcalRecHitSumEt = cms.string("dr03EcalRecHitSumEt"),
+    el_ecalIso             = cms.string("ecalPFClusterIso"), # this one seem to be always 0 in CMSSW_10_2_X
+    el_hcalIso             = cms.string("hcalPFClusterIso"), # this one seem to be always 0 in CMSSW_10_2_X
+    el_trkIso              = cms.string("trackIso"),
+    el_dr03TkSumPt         = cms.string("dr03TkSumPt"),
+
+    # this relative PF lepton isolation component is added to the standard PF isolation sum
+    # in order to get the isolation variable used in the triboson analysis
+    # in the small test runs this variable is always 0, but I guess it is very rare to find another lepton in the cone
+    el_relPfLepIso03 = cms.InputTag("eleVarHelper:pfLeptonIsolation"),
 
     #added for VHbbEIso
     el_sumPUPt       = cms.string("pfIsolationVariables().sumPUPt"),
-    el_reliso03      = cms.string("(pfIsolationVariables().sumChargedHadronPt + max(pfIsolationVariables().sumNeutralHadronEt + pfIsolationVariables().sumPhotonEt - 0.5 * pfIsolationVariables().sumPUPt,0.0)) / pt() "),
+    el_relIso03_dB   = cms.string("(pfIsolationVariables().sumChargedHadronPt + max(pfIsolationVariables().sumNeutralHadronEt + pfIsolationVariables().sumPhotonEt - 0.5 * pfIsolationVariables().sumPUPt,0.0)) / pt() "),
 
     # tracker Variabels
     el_tk_pt        = cms.string("gsfTrack().ptMode"),
@@ -117,11 +124,34 @@ EleProbeVariablesToStore = cms.PSet(
     el_found_hits     = cms.string("gsfTrack().found()"), # sometimes called valid_hits
     el_convVtxFitProb  = cms.InputTag("eleVarHelper:convVtxFitProb"),
 
+    el_hasMatchedConversion = cms.InputTag("eleVarHelper:hasMatchedConversion"),
+
     # Track cluster matching
     el_ep             = cms.string("eSuperClusterOverP()"),
     el_eelepout       = cms.string("eEleClusterOverPout()"),
     el_IoEmIop        = cms.InputTag("eleVarHelper:ioemiop"),
 
+    # For typeI
+    el_relEcalIso         = cms.InputTag("eleVarHelper:relEcalIso"),
+    el_relHcalIso         = cms.InputTag("eleVarHelper:relHcalIso"),
+    el_relTrkIso          = cms.InputTag("eleVarHelper:relTrkIso"),
+    el_ip2D               = cms.InputTag("eleVarHelper:ip2D"),
+    el_ipDZ               = cms.InputTag("eleVarHelper:ipDZ"),
+    el_sip2D              = cms.InputTag("eleVarHelper:sip2D"),
+    el_isPOGIP            = cms.InputTag("eleVarHelper:isPOGIP"),
+    el_isPOGIP2D          = cms.InputTag("eleVarHelper:isPOGIP2D"),
+    el_idCutForTrigger    = cms.InputTag("eleVarHelper:idCutForTrigger"),
+    el_isoCutForTrigger   = cms.InputTag("eleVarHelper:isoCutForTrigger"),
+    #el_isTightChargePt200 = cms.InputTag("eleVarHelper:isTightChargePt200"),
+    #el_isTightChargePt250 = cms.InputTag("eleVarHelper:isTightChargePt250"),
+    #el_isTightChargePt300 = cms.InputTag("eleVarHelper:isTightChargePt300"),
+
+    #el_chIso_check        = cms.InputTag("eleVarHelper:chIso"),
+    #el_nhIso_check        = cms.InputTag("eleVarHelper:nhIso"),
+    #el_phoIso_check       = cms.InputTag("eleVarHelper:phoIso"),
+    #el_eventRho_check     = cms.InputTag("eleVarHelper:eventRho"),
+
+    el_relPFIso           = cms.InputTag("eleVarHelper:relPFIso"),
     )
 
 PhoProbeVariablesToStore = cms.PSet(
@@ -131,34 +161,47 @@ PhoProbeVariablesToStore = cms.PSet(
     ph_e      = cms.string("energy"),
 
 ## super cluster quantities
-    ph_sc_energy = cms.string("superCluster.energy"),
-    ph_sc_et     = cms.string("superCluster.energy*sin(superCluster.position.theta)"),    
-    ph_sc_eta    = cms.string("-log(tan(superCluster.position.theta/2))"),
-    phsc_abseta = cms.string("abs(-log(tan(superCluster.position.theta/2)))"),
+    ph_sc_energy    = cms.string("superCluster.energy"),
+    ph_sc_rawEnergy = cms.string("superCluster.rawEnergy"),
+    ph_sc_et        = cms.string("superCluster.energy*sin(superCluster.position.theta)"),
+    ph_sc_eta       = cms.string("-log(tan(superCluster.position.theta/2))"),
+    ph_sc_abseta    = cms.string("abs(-log(tan(superCluster.position.theta/2)))"),
+    ph_sc_etaWidth  = cms.string("superCluster.etaWidth"),
+    ph_sc_phiWidth  = cms.string("superCluster.phiWidth"),
+
+## preshower energy plane 1 and 2
+    ph_preshower_energy_plane1 = cms.string("superCluster.preshowerEnergyPlane1"),
+    ph_preshower_energy_plane2 = cms.string("superCluster.preshowerEnergyPlane2"),
 
 
 #id based
     ph_full5x5x_r9   = cms.string("full5x5_r9"),
     ph_r9            = cms.string("r9"),
     ph_sieie         = cms.string("full5x5_sigmaIetaIeta"),
-    ph_sieip         = cms.InputTag("photonIDValueMapProducer:phoFull5x5SigmaIEtaIPhi"),
-    ph_ESsigma       = cms.InputTag("photonIDValueMapProducer:phoESEffSigmaRR"),
+    ph_s4            = cms.string("full5x5_showerShapeVariables.e2x2/full5x5_showerShapeVariables.e5x5"),
+    ph_sieip         = cms.string("full5x5_showerShapeVariables.sigmaIetaIphi"),
+    ph_ESsigma       = cms.string("full5x5_showerShapeVariables.effSigmaRR"),
     ph_hoe           = cms.string("hadronicOverEm"),
 
-#iso
-    ph_chIso    = cms.InputTag("photonIDValueMapProducer:phoChargedIsolation"),
-    ph_neuIso   = cms.InputTag("photonIDValueMapProducer:phoNeutralHadronIsolation"),
-    ph_phoIso   = cms.InputTag("photonIDValueMapProducer:phoPhotonIsolation"),
-    ph_chWorIso = cms.InputTag("photonIDValueMapProducer:phoWorstChargedIsolation"), 
-
 #pho mva
-
     ph_mva80X       = cms.InputTag("photonMVAValueMapProducer:PhotonMVAEstimatorRun2Spring16NonTrigV1Values"),
     ph_mva94X       = cms.InputTag("photonMVAValueMapProducer:PhotonMVAEstimatorRunIIFall17v1p1Values"),
+    ph_mva94XV2     = cms.InputTag("photonMVAValueMapProducer:PhotonMVAEstimatorRunIIFall17v2Values"),
+
+# iso
+    ph_chIso    = cms.string("chargedHadronIso"),
+    ph_neuIso   = cms.string("neutralHadronIso"),
+    ph_phoIso   = cms.string("photonIso"),
+    ph_chWorIso = cms.string("chargedHadronWorstVtxIso"),
 )
 
-
-
+if not isReleaseAbove(10, 6): # old way of accessing these in CMSSW_10_2
+    PhoProbeVariablesToStore.ph_sieip    = cms.InputTag("photonIDValueMapProducer:phoFull5x5SigmaIEtaIPhi")
+    PhoProbeVariablesToStore.ph_ESsigma  = cms.InputTag("photonIDValueMapProducer:phoESEffSigmaRR")
+    PhoProbeVariablesToStore.ph_chIso    = cms.InputTag("photonIDValueMapProducer:phoChargedIsolation")
+    PhoProbeVariablesToStore.ph_neuIso   = cms.InputTag("photonIDValueMapProducer:phoNeutralHadronIsolation")
+    PhoProbeVariablesToStore.ph_phoIso   = cms.InputTag("photonIDValueMapProducer:phoPhotonIsolation")
+    PhoProbeVariablesToStore.ph_chWorIso = cms.InputTag("photonIDValueMapProducer:phoWorstChargedIsolation")
 
 TagVariablesToStore = cms.PSet(
     Ele_eta    = cms.string("eta"),
@@ -179,7 +222,7 @@ TagVariablesToStore = cms.PSet(
 #    Ele_mHits         = cms.InputTag("eleVarHelper:missinghits"),
     Ele_dz            = cms.InputTag("eleVarHelper:dz"),
     Ele_dxy           = cms.InputTag("eleVarHelper:dxy"),
-    el_sip           = cms.InputTag("eleVarHelper:sip"),
+    Ele_sip           = cms.InputTag("eleVarHelper:sip"),
     Ele_nonTrigMVA80X    = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Spring16GeneralPurposeV1Values"),
     Ele_hzzMVA80X    = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Spring16HZZV1Values"),
 
@@ -190,6 +233,32 @@ TagVariablesToStore = cms.PSet(
     Ele_noIsoMVA94XV2   = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Fall17NoIsoV2Values"), 
     Ele_IsoMVA94XV2   = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Fall17IsoV2Values"),
 
+    ## For typeI
+    Ele_5x5_sieie     = cms.string("full5x5_showerShape().sigmaIetaIeta"),
+    Ele_hoe           = cms.string("hadronicOverEm()"),
+    Ele_1overEminus1overP        = cms.string("abs(1-eSuperClusterOverP())/ecalEnergy()"),
+    Ele_dEtaSeed      = cms.string("deltaEtaSuperClusterTrackAtVtx+log(tan(superCluster.position.theta/2))-log(tan(superCluster.seed.position.theta/2))"),
+    Ele_dPhiIn        = cms.string("deltaPhiSuperClusterTrackAtVtx"),
+    Ele_relEcalIso    = cms.InputTag("eleVarHelper:relEcalIso"),
+    Ele_relHcalIso    = cms.InputTag("eleVarHelper:relHcalIso"),
+    Ele_relTrkIso     = cms.InputTag("eleVarHelper:relTrkIso"),
+    Ele_ip2D          = cms.InputTag("eleVarHelper:ip2D"),
+    Ele_ipDZ          = cms.InputTag("eleVarHelper:ipDZ"),
+    Ele_sip2D         = cms.InputTag("eleVarHelper:sip2D"),
+    Ele_isPOGIP            = cms.InputTag("eleVarHelper:isPOGIP"),
+    Ele_isPOGIP2D          = cms.InputTag("eleVarHelper:isPOGIP2D"),
+    Ele_idCutForTrigger    = cms.InputTag("eleVarHelper:idCutForTrigger"),
+    Ele_isoCutForTrigger   = cms.InputTag("eleVarHelper:isoCutForTrigger"),
+    #Ele_isTightChargePt200 = cms.InputTag("eleVarHelper:isTightChargePt200"),
+    #Ele_isTightChargePt250 = cms.InputTag("eleVarHelper:isTightChargePt250"),
+    #Ele_isTightChargePt300 = cms.InputTag("eleVarHelper:isTightChargePt300"),
+
+    #Ele_chIso_check        = cms.InputTag("eleVarHelper:chIso"),
+    #Ele_nhIso_check        = cms.InputTag("eleVarHelper:nhIso"),
+    #Ele_phoIso_check       = cms.InputTag("eleVarHelper:phoIso"),
+    #Ele_eventRho_check     = cms.InputTag("eleVarHelper:eventRho"),
+
+    Ele_relPFIso           = cms.InputTag("eleVarHelper:relPFIso"),
     )
 
 CommonStuffForGsfElectronProbe = cms.PSet(
@@ -199,7 +268,6 @@ CommonStuffForGsfElectronProbe = cms.PSet(
     pairVariables    =  cms.PSet(ZVariablesToStore),
     tagVariables     =  cms.PSet(TagVariablesToStore),
 
-    ignoreExceptions = cms.bool (True),
     addRunLumiInfo   = cms.bool (True),
     pileupInfoTag    = cms.InputTag("slimmedAddPileupInfo"),
     vertexCollection = cms.InputTag("offlineSlimmedPrimaryVertices"),    
@@ -222,26 +290,30 @@ CommonStuffForPhotonProbe.variables = cms.PSet(PhoProbeVariablesToStore)
 CommonStuffForSuperClusterProbe = CommonStuffForGsfElectronProbe.clone()
 CommonStuffForSuperClusterProbe.variables = cms.PSet(SCProbeVariablesToStore)
 
-mcTruthCommonStuff = cms.PSet(
-    isMC = cms.bool(True),
-    tagMatches   = cms.InputTag("genTagEle"),
-    motherPdgId = cms.vint32(),
-    #motherPdgId = cms.vint32(22,23),
-    #motherPdgId = cms.vint32(443), # JPsi
-    #motherPdgId = cms.vint32(553), # Yupsilon
-    makeMCUnbiasTree = cms.bool(False),
-    #checkMotherInUnbiasEff = cms.bool(False),
-    mcVariables = cms.PSet(
-        probe_eta    = cms.string("eta"),
-        probe_phi    = cms.string("phi"),
-        probe_et     = cms.string("et"),
-        probe_e      = cms.string("energy"),
-        ),
-    mcFlags     =  cms.PSet(
-        probe_flag = cms.string("pt>0")
-        ),      
-    )
 
+def getTnPVariablesForMCTruth(isMC=True):
+    if isMC:
+      return cms.PSet(
+        isMC                   = cms.bool(True),
+        tagMatches             = cms.InputTag("genTagEle"),
+        motherPdgId            = cms.vint32(),
+       #motherPdgId            = cms.vint32(22,23),
+       #motherPdgId            = cms.vint32(443), # JPsi
+       #motherPdgId            = cms.vint32(553), # Yupsilon
+        makeMCUnbiasTree       = cms.bool(False),
+       #checkMotherInUnbiasEff = cms.bool(False),
+        mcVariables = cms.PSet(
+          probe_eta    = cms.string("eta"),
+          probe_phi    = cms.string("phi"),
+          probe_et     = cms.string("et"),
+          probe_e      = cms.string("energy"),
+          ),
+        mcFlags     =  cms.PSet(
+          probe_flag = cms.string("pt>0")
+        ),
+      )
+    else:
+      return cms.PSet(isMC = cms.bool(False))
 
 
 def setupTnPVariablesForAOD():

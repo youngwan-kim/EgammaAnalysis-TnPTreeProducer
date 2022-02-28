@@ -7,25 +7,18 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 
 #include "DataFormats/Common/interface/ValueMap.h"
-#include "DataFormats/Candidate/interface/CandidateFwd.h"
-#include "DataFormats/Candidate/interface/Candidate.h"
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 
-//#include "DataFormats/L1Trigger/interface/L1EmParticle.h"
-//#include "DataFormats/L1Trigger/interface/L1EmParticleFwd.h"
-#include "HLTrigger/HLTcore/interface/HLTFilter.h"
+#include "DataFormats/L1Trigger/interface/L1EmParticle.h"
+#include "DataFormats/L1Trigger/interface/L1EmParticleFwd.h"
 #include "DataFormats/L1Trigger/interface/EGamma.h"
 #include "DataFormats/HLTReco/interface/TriggerFilterObjectWithRefs.h"
-#include "CondFormats/L1TObjects/interface/L1CaloGeometry.h"
-#include "CondFormats/DataRecord/interface/L1CaloGeometryRecord.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
 
-#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
-
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 
@@ -34,9 +27,11 @@
 #include "DataFormats/EgammaCandidates/interface/Conversion.h"
 #include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
 
+#include "EgammaAnalysis/TnPTreeProducer/plugins/WriteValueMap.h"
+#include "EgammaAnalysis/TnPTreeProducer/plugins/isolations.h"
+
 #include "TMath.h"
 
-typedef edm::View<reco::Candidate> CandView;
 
 template <class T>
 class ElectronVariableHelper : public edm::EDProducer {
@@ -44,17 +39,20 @@ class ElectronVariableHelper : public edm::EDProducer {
   explicit ElectronVariableHelper(const edm::ParameterSet & iConfig);
   virtual ~ElectronVariableHelper() ;
 
+  virtual float getEffArea(float scEta);
+
   virtual void produce(edm::Event & iEvent, const edm::EventSetup & iSetup) override;
 
 private:
-  void store(const std::string &varName, std::vector<float> vals, edm::Handle<std::vector<T> > &probes, edm::Event &iEvent);
-
   edm::EDGetTokenT<std::vector<T> > probesToken_;
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::EDGetTokenT<BXVector<l1t::EGamma> > l1EGToken_;
-  edm::EDGetTokenT<CandView> pfCandToken_;
   edm::EDGetTokenT<reco::ConversionCollection> conversionsToken_;
   edm::EDGetTokenT<reco::BeamSpot> beamSpotToken_;
+  edm::EDGetTokenT<edm::View<reco::Candidate>> pfCandidatesToken_;
+  edm::EDGetTokenT<double> rhoLabel_;
+
+  bool isMiniAODformat;
 };
 
 template<class T>
@@ -63,56 +61,69 @@ ElectronVariableHelper<T>::ElectronVariableHelper(const edm::ParameterSet & iCon
   vtxToken_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertexCollection"))),
   l1EGToken_(consumes<BXVector<l1t::EGamma> >(iConfig.getParameter<edm::InputTag>("l1EGColl"))),
   conversionsToken_(consumes<reco::ConversionCollection>(iConfig.getParameter<edm::InputTag>("conversions"))),
-  beamSpotToken_(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))) {
+  beamSpotToken_(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))),
+  pfCandidatesToken_(consumes<edm::View<reco::Candidate>>(iConfig.getParameter<edm::InputTag>("pfCandidates"))),
+  rhoLabel_(consumes<double>(iConfig.getParameter<edm::InputTag>("rhoLabel"))){
 
-  produces<edm::ValueMap<float> >("dz");
-  produces<edm::ValueMap<float> >("dxy");
-  produces<edm::ValueMap<float> >("sip");
-  produces<edm::ValueMap<float> >("missinghits");
-  produces<edm::ValueMap<float> >("gsfhits");
-  produces<edm::ValueMap<float> >("l1e");
-  produces<edm::ValueMap<float> >("l1et");
-  produces<edm::ValueMap<float> >("l1eta");
-  produces<edm::ValueMap<float> >("l1phi");
-  produces<edm::ValueMap<float> >("pfPt");
-  produces<edm::ValueMap<float> >("convVtxFitProb");
-  produces<edm::ValueMap<float> >("kfhits");
-  produces<edm::ValueMap<float> >("kfchi2");
-  produces<edm::ValueMap<float> >("ioemiop");
-  produces<edm::ValueMap<float> >("5x5circularity");
+  produces<edm::ValueMap<float>>("dz");
+  produces<edm::ValueMap<float>>("dxy");
+  produces<edm::ValueMap<float>>("sip");
+  produces<edm::ValueMap<float>>("missinghits");
+  produces<edm::ValueMap<float>>("gsfhits");
+  produces<edm::ValueMap<float>>("l1e");
+  produces<edm::ValueMap<float>>("l1et");
+  produces<edm::ValueMap<float>>("l1eta");
+  produces<edm::ValueMap<float>>("l1phi");
+  produces<edm::ValueMap<float>>("pfPt");
+  produces<edm::ValueMap<float>>("convVtxFitProb");
+  produces<edm::ValueMap<float>>("kfhits");
+  produces<edm::ValueMap<float>>("kfchi2");
+  produces<edm::ValueMap<float>>("ioemiop");
+  produces<edm::ValueMap<float>>("5x5circularity");
+  produces<edm::ValueMap<float>>("pfLeptonIsolation");
+  produces<edm::ValueMap<float>>("hasMatchedConversion");
 
-  if( iConfig.existsAs<edm::InputTag>("pfCandColl") ) {
-    pfCandToken_ = consumes<CandView>(iConfig.getParameter<edm::InputTag>("pfCandColl"));
-  }
+  produces<edm::ValueMap<float>>("relEcalIso");
+  produces<edm::ValueMap<float>>("relHcalIso");
+  produces<edm::ValueMap<float>>("relTrkIso");
+  produces<edm::ValueMap<float>>("ip2D");
+  produces<edm::ValueMap<float>>("ipDZ");
+  produces<edm::ValueMap<float>>("sip2D");
+  produces<edm::ValueMap<float>>("isPOGIP");
+  produces<edm::ValueMap<float>>("isPOGIP2D");
+  produces<edm::ValueMap<float>>("idCutForTrigger");
+  produces<edm::ValueMap<float>>("isoCutForTrigger");
+  //produces<edm::ValueMap<float>>("isTightChargePt200");
+  //produces<edm::ValueMap<float>>("isTightChargePt250");
+  //produces<edm::ValueMap<float>>("isTightChargePt300");
 
+  //produces<edm::ValueMap<float>>("chIso");
+  //produces<edm::ValueMap<float>>("nhIso");
+  //produces<edm::ValueMap<float>>("phoIso");
+  //produces<edm::ValueMap<float>>("eventRho");
+
+  produces<edm::ValueMap<float>>("relPFIso");
+
+  isMiniAODformat = true;
 }
 
 template<class T>
 ElectronVariableHelper<T>::~ElectronVariableHelper()
 {}
 
-template<class T>
-void ElectronVariableHelper<T>::store(const std::string &varName, std::vector<float> vals, edm::Handle<std::vector<T> > &probes, edm::Event &iEvent) {
-  // convert into ValueMap and store
-  std::unique_ptr<edm::ValueMap<float> > valMap(new edm::ValueMap<float>());
-  edm::ValueMap<float>::Filler filler(*valMap);
-  filler.insert(probes, vals.begin(), vals.end());
-  filler.fill();
-  iEvent.put(std::move(valMap), varName);
-}
 
 template<class T>
 void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSetup & iSetup) {
 
   // read input
-  edm::Handle<std::vector<T> > probes;
+  edm::Handle<std::vector<T>> probes;
   edm::Handle<reco::VertexCollection> vtxH;
 
   iEvent.getByToken(probesToken_, probes);
   iEvent.getByToken(vtxToken_, vtxH);
   const reco::VertexRef vtx(vtxH, 0);
 
-  edm::Handle<BXVector<l1t::EGamma> > l1Cands;
+  edm::Handle<BXVector<l1t::EGamma>> l1Cands;
   iEvent.getByToken(l1EGToken_, l1Cands);
 
   edm::Handle<reco::ConversionCollection> conversions;
@@ -122,8 +133,12 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
   iEvent.getByToken(beamSpotToken_, beamSpotHandle);
   const reco::BeamSpot* beamSpot = &*(beamSpotHandle.product());
 
-  edm::Handle<CandView> pfCands;
-  if( !pfCandToken_.isUninitialized() ) iEvent.getByToken(pfCandToken_,pfCands);
+  edm::Handle<edm::View<reco::Candidate>> pfCandidates;
+  iEvent.getByToken(pfCandidatesToken_, pfCandidates);
+
+  edm::Handle<double> rhoHandle;
+  iEvent.getByToken(rhoLabel_, rhoHandle);
+  double rho = std::max(*(rhoHandle.product()), 0.0);
 
   // prepare vector for output
   std::vector<float> dzVals;
@@ -144,6 +159,29 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
 
   std::vector<float> gsfhVals;
 
+  std::vector<float> hasMatchedConversionVals;
+
+  std::vector<float> relEcalIsoVals;
+  std::vector<float> relHcalIsoVals;
+  std::vector<float> relTrkIsoVals;
+  std::vector<float> ip2DVals;
+  std::vector<float> ipDZVals;
+  std::vector<float> sip2DVals;
+  std::vector<float> isPOGIPVals;
+  std::vector<float> isPOGIP2DVals;
+  std::vector<float> idCutForTriggerVals;
+  std::vector<float> isoCutForTriggerVals;
+  //std::vector<float> isTightChargePt200Vals;
+  //std::vector<float> isTightChargePt250Vals;
+  //std::vector<float> isTightChargePt300Vals;
+
+  //std::vector<float> chIsoVals;
+  //std::vector<float> nhIsoVals;
+  //std::vector<float> phoIsoVals;
+  //std::vector<float> eventRhoVals;
+
+  std::vector<float> relPFIsoVals;
+
   typename std::vector<T>::const_iterator probe, endprobes = probes->end();
 
   for (probe = probes->begin(); probe != endprobes; ++probe) {
@@ -151,8 +189,11 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
     //---Clone the pat::Electron
     pat::Electron l((pat::Electron)*probe);
 
-    dzVals.push_back(probe->gsfTrack()->dz(vtx->position()));
-    dxyVals.push_back(probe->gsfTrack()->dxy(vtx->position()));
+    float dxy = probe->gsfTrack()->dxy(vtx->position());
+    float dz  = probe->gsfTrack()->dz(vtx->position());
+
+    dxyVals.push_back(dxy);
+    dzVals.push_back(dz);
 
     // SIP
     float IP      = fabs(l.dB(pat::Electron::PV3D));
@@ -179,12 +220,12 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
         l1phi = l1Cand->phi();
       }
     }
-    if( pfCands.isValid() )
-    for( size_t ipf = 0; ipf < pfCands->size(); ++ipf ) {
-        auto pfcand = pfCands->ptrAt(ipf);
-    if( abs( pfcand->pdgId() ) != 11 ) continue;
-    float dR = deltaR(pfcand->eta(), pfcand->phi() , probe->eta(), probe->phi());
-    if( dR < 0.0001 ) pfpt = pfcand->pt();
+
+    for( size_t ipf = 0; ipf < pfCandidates->size(); ++ipf ) {
+      auto pfcand = pfCandidates->ptrAt(ipf);
+      if(abs(pfcand->pdgId()) != 11) continue;
+      float dR = deltaR(pfcand->eta(), pfcand->phi(), probe->eta(), probe->phi());
+      if(dR < 0.0001) pfpt = pfcand->pt();
     }
 
     l1EVals.push_back(l1e);
@@ -193,18 +234,35 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
     l1PhiVals.push_back(l1phi);
     pfPtVals.push_back(pfpt);
 
-    // Conversion vertex fit
-    reco::ConversionRef convRef = ConversionTools::matchedConversion(*probe, conversions, beamSpot->position());
+    // Store hasMatchedConversion (currently stored as float instead of bool, as it allows to implement it in the same way as other variables)
+    #if (CMSSW_MAJOR_VERSION>=10 && CMSSW_MINOR_VERSION>=4) || (CMSSW_MAJOR_VERSION>=11)
+    hasMatchedConversionVals.push_back((float)ConversionTools::hasMatchedConversion(*probe, *conversions, beamSpot->position()));
+    #else
+    hasMatchedConversionVals.push_back((float)ConversionTools::hasMatchedConversion(*probe, conversions, beamSpot->position()));
+    #endif
 
+    // Conversion vertex fit
     float convVtxFitProb = -1.;
+
+    #if (CMSSW_MAJOR_VERSION>=10 && CMSSW_MINOR_VERSION>=4) || (CMSSW_MAJOR_VERSION>=11)
+    reco::Conversion const* convRef = ConversionTools::matchedConversion(*probe,*conversions, beamSpot->position());
+    if(!convRef==0) {
+        const reco::Vertex &vtx = convRef->conversionVertex();
+        if (vtx.isValid()) {
+            convVtxFitProb = TMath::Prob( vtx.chi2(),  vtx.ndof());
+        }
+    }
+    #else
+    reco::ConversionRef convRef = ConversionTools::matchedConversion(*probe, conversions, beamSpot->position());
     if(!convRef.isNull()) {
         const reco::Vertex &vtx = convRef.get()->conversionVertex();
         if (vtx.isValid()) {
             convVtxFitProb = TMath::Prob( vtx.chi2(),  vtx.ndof());
         }
     }
-
+    #endif
     convVtxFitProbVals.push_back(convVtxFitProb);
+
 
     // kf track related variables
     bool validKf=false;
@@ -230,28 +288,142 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
     }
 
     ioemiopVals.push_back(ele_IoEmIop);
+
+    // For typeI
+    float sieie = probe->full5x5_sigmaIetaIeta();
+    float hoe   = probe->hadronicOverEm();
+
+    float miniAODPt  = probe->pt();
+    float scEta = probe->superCluster()->eta();
+
+    float relEcalIso = probe->ecalPFClusterIso()/miniAODPt;
+    float relHcalIso = probe->hcalPFClusterIso()/miniAODPt;
+    float relTrkIso  = probe->dr03TkSumPt()/miniAODPt;
+
+    float effArea = getEffArea(scEta);
+    float chIso   = probe->pfIsolationVariables().sumChargedHadronPt;
+    float nhIso   = probe->pfIsolationVariables().sumNeutralHadronEt;
+    float phoIso  = probe->pfIsolationVariables().sumPhotonEt;
+    float relIso  = (chIso + std::max(0.0, nhIso + phoIso - rho*effArea))/miniAODPt;
+
+    //chIsoVals.push_back(chIso);
+    //nhIsoVals.push_back(nhIso);
+    //phoIsoVals.push_back(phoIso);
+    //eventRhoVals.push_back(rho);
+
+    relPFIsoVals.push_back(relIso);
+
+    float ip2D       = l.dB(pat::Electron::PV2D);
+    float ipDZ       = l.dB(pat::Electron::PVDZ);
+    float ip2DError  = l.edB(pat::Electron::PV2D);
+    float sip2D      = fabs(ip2D)/ip2DError;
+
+    relEcalIsoVals.push_back(relEcalIso);
+    relHcalIsoVals.push_back(relHcalIso);
+    relTrkIsoVals.push_back(relTrkIso);
+    ip2DVals.push_back(ip2D);
+    ipDZVals.push_back(ipDZ);
+    sip2DVals.push_back(sip2D);
+
+
+    float isPOGIP = 0, isPOGIP2D = 0;
+    if( (fabs(scEta)<1.479 && fabs(dxy)<0.05 && fabs(dz)<0.1) || (fabs(scEta)>1.479 && fabs(dxy)<0.1 && fabs(dz)<0.2) ) isPOGIP = 1;
+    if( (fabs(scEta)<1.479 && fabs(ip2D)<0.05 && fabs(ipDZ)<0.1) || (fabs(scEta)>1.479 && fabs(ip2D)<0.1 && fabs(ipDZ)<0.2) ) isPOGIP2D = 1;
+
+    isPOGIPVals.push_back(isPOGIP);
+    isPOGIP2DVals.push_back(isPOGIP2D);
+
+
+    float passID = 0, passIso = 0;
+    if( (fabs(scEta)<1.479 && sieie<0.011 && hoe<0.08) || (fabs(scEta)>1.479 && sieie<0.031 && hoe<0.08) ) passID = 1; // Not including fabs(ele_IoEmIop)<0.01
+    if( relEcalIso<0.45 && relHcalIso<0.25 && relTrkIso<0.2 ) passIso = 1;
+ 
+    idCutForTriggerVals.push_back(passID);
+    isoCutForTriggerVals.push_back(passIso);
+
+
+    /*float isTightChargePt200 = 0, isTightChargePt250 = 0, isTightChargePt300 = 0;
+    float isTightCharge = probe->isGsfCtfChargeConsistent(); 
+    if( (miniAODPt<200. && isTightCharge==1) || miniAODPt>=200. ) isTightChargePt200 = 1;
+    if( (miniAODPt<250. && isTightCharge==1) || miniAODPt>=250. ) isTightChargePt250 = 1;
+    if( (miniAODPt<300. && isTightCharge==1) || miniAODPt>=300. ) isTightChargePt300 = 1;
+
+    isTightChargePt200Vals.push_back(isTightChargePt200);
+    isTightChargePt250Vals.push_back(isTightChargePt250);
+    isTightChargePt300Vals.push_back(isTightChargePt300);*/
   }
 
-
   // convert into ValueMap and store
+  writeValueMap(iEvent, probes, dzVals, "dz");
+  writeValueMap(iEvent, probes, dxyVals, "dxy");
+  writeValueMap(iEvent, probes, sipVals, "sip");
+  writeValueMap(iEvent, probes, mhVals, "missinghits");
+  writeValueMap(iEvent, probes, gsfhVals, "gsfhits");
+  writeValueMap(iEvent, probes, l1EVals, "l1e");
+  writeValueMap(iEvent, probes, l1EtVals, "l1et");
+  writeValueMap(iEvent, probes, l1EtaVals, "l1eta");
+  writeValueMap(iEvent, probes, l1PhiVals, "l1phi");
+  writeValueMap(iEvent, probes, pfPtVals, "pfPt");
+  writeValueMap(iEvent, probes, convVtxFitProbVals, "convVtxFitProb");
+  writeValueMap(iEvent, probes, kfhitsVals, "kfhits");
+  writeValueMap(iEvent, probes, kfchi2Vals, "kfchi2");
+  writeValueMap(iEvent, probes, ioemiopVals, "ioemiop");
+  writeValueMap(iEvent, probes, ocVals, "5x5circularity");
+  writeValueMap(iEvent, probes, hasMatchedConversionVals, "hasMatchedConversion");
 
-  
+  writeValueMap(iEvent, probes, relEcalIsoVals, "relEcalIso");
+  writeValueMap(iEvent, probes, relHcalIsoVals, "relHcalIso");
+  writeValueMap(iEvent, probes, relTrkIsoVals, "relTrkIso");
+  writeValueMap(iEvent, probes, ip2DVals, "ip2D");
+  writeValueMap(iEvent, probes, ipDZVals, "ipDZ");
+  writeValueMap(iEvent, probes, sip2DVals, "sip2D");
+  writeValueMap(iEvent, probes, isPOGIPVals, "isPOGIP");
+  writeValueMap(iEvent, probes, isPOGIP2DVals, "isPOGIP2D");
+  writeValueMap(iEvent, probes, idCutForTriggerVals, "idCutForTrigger");
+  writeValueMap(iEvent, probes, isoCutForTriggerVals, "isoCutForTrigger");
+  //writeValueMap(iEvent, probes, isTightChargePt200Vals, "isTightChargePt200");
+  //writeValueMap(iEvent, probes, isTightChargePt250Vals, "isTightChargePt250");
+  //writeValueMap(iEvent, probes, isTightChargePt300Vals, "isTightChargePt300");
 
-  store("dz", dzVals, probes, iEvent);
-  store("dxy", dxyVals, probes, iEvent);
-  store("sip", sipVals, probes, iEvent);
-  store("missinghits", mhVals, probes, iEvent);
-  store("l1e", l1EVals, probes, iEvent);
-  store("l1et", l1EtVals, probes, iEvent);
-  store("l1eta", l1EtaVals, probes, iEvent);
-  store("l1phi", l1PhiVals, probes, iEvent);
-  store("pfPt", pfPtVals, probes, iEvent);
-  store("convVtxFitProb", convVtxFitProbVals, probes, iEvent);
-  store("kfhits", kfhitsVals, probes, iEvent);
-  store("kfchi2", kfchi2Vals, probes, iEvent);
-  store("ioemiop", ioemiopVals, probes, iEvent);
-  store("5x5circularity", ocVals, probes, iEvent);
+  //writeValueMap(iEvent, probes, chIsoVals, "chIso");
+  //writeValueMap(iEvent, probes, nhIsoVals, "nhIso");
+  //writeValueMap(iEvent, probes, phoIsoVals, "phoIso");
+  //writeValueMap(iEvent, probes, eventRhoVals, "eventRho");
 
+  writeValueMap(iEvent, probes, relPFIsoVals, "relPFIso");
+
+  // PF lepton isolations (will only work in miniAOD)
+  if(isMiniAODformat){
+    try {
+      auto pfLeptonIsolations = computePfLeptonIsolations(*probes, *pfCandidates);
+      for(unsigned int i = 0; i < probes->size(); ++i){
+	pfLeptonIsolations[i] /= (*probes)[i].pt();
+      }
+      writeValueMap(iEvent, probes, pfLeptonIsolations, "pfLeptonIsolation");
+    } catch (std::bad_cast){
+      isMiniAODformat = false;
+    }
+  }
+}
+
+
+template<class T>
+float ElectronVariableHelper<T>::getEffArea(float scEta){
+
+  // References
+  // https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
+  // https://github.com/cms-sw/cmssw/blob/CMSSW_10_2_X/RecoEgamma/ElectronIdentification/data/Fall17/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_94X.txt
+
+  float absEta = std::abs(scEta);
+
+  if ( 0.0000 >= absEta && absEta < 1.0000 ) return 0.1440;
+  if ( 1.0000 >= absEta && absEta < 1.4790 ) return 0.1562;
+  if ( 1.4790 >= absEta && absEta < 2.0000 ) return 0.1032;
+  if ( 2.0000 >= absEta && absEta < 2.2000 ) return 0.0859;
+  if ( 2.2000 >= absEta && absEta < 2.3000 ) return 0.1116;
+  if ( 2.3000 >= absEta && absEta < 2.4000 ) return 0.1321;
+  if ( 2.4000 >= absEta && absEta < 2.5000 ) return 0.1654;
+  return 0;
 
 }
 
